@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Économies solaires - Nexus HUD</title>
+<style>
+:root{
+  --bg:#07090f; --card:rgba(13, 19, 33, 0.75); --card2:rgba(20, 29, 48, 0.85); 
+  --line:rgba(0, 243, 255, 0.15); --line-strong:rgba(0, 243, 255, 0.4);
+  --txt:#e0fbfc; --dim:#7b93a8; --dim2:#55677f; 
+  --accent:#00f3ff; --accent-soft:rgba(0, 243, 255, 0.12); --accent-dark:#a5f9ff;
+  --ok:#00ffcc; --okl:#7ddb9a; --warn:#ffb703; --bad:#ff3366; --tarif:#a5b4fc;
+  --glow: 0 0 15px rgba(0, 243, 255, 0.15);
+  --glow-strong: 0 0 25px rgba(0, 243, 255, 0.35);
+  --glow-ok: 0 0 20px rgba(0, 255, 204, 0.3);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;background:var(--bg);
+  background-image: 
+    radial-gradient(circle at 15% 15%, rgba(0, 243, 255, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 85% 85%, rgba(0, 255, 204, 0.03) 0%, transparent 40%);
+  color:var(--txt);
+  font-family:ui-monospace,Consolas,"Segoe UI Mono",monospace;overflow:hidden}
+
+#app{width:100%;height:100vh;height:100dvh;display:flex;flex-direction:column;
+  overflow:hidden;padding:18px;gap:14px}
+
+#hdr{flex-shrink:0}
+#hdr .t{font-size:clamp(15px,2.2vh,19px);letter-spacing:.2em;color:var(--ok);font-weight:800;text-shadow:var(--glow-ok)}
+#hdr .s{font-size:12px;color:var(--dim);letter-spacing:.14em;margin-top:4px}
+
+#main{background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--line-strong);border-radius:16px;
+  padding:16px 20px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;flex-shrink:0;box-shadow:var(--glow)}
+#main .l{font-size:clamp(12px,1.8vh,15px);letter-spacing:.22em;font-weight:800;color:var(--dim)}
+#main .big{font-size:clamp(44px,8vh,74px);font-weight:800;color:var(--ok);line-height:1;text-shadow:var(--glow-ok)}
+#main .big small{font-size:.4em;color:var(--okl)}
+#main .sub{font-size:14px;color:var(--dim);letter-spacing:.1em}
+#main .sub b{color:var(--ok)} #main .sub b.neg{color:var(--bad)}
+
+#objw{width:100%;display:flex;flex-direction:column;gap:6px;margin-top:4px}
+#obar{position:relative;height:14px;border-radius:7px;background:rgba(5,8,15,0.8);border:1px solid var(--line)}
+#obar-f{height:100%;width:0%;border-radius:7px;background:linear-gradient(90deg,#00b4d8,var(--ok));box-shadow:var(--glow-ok);transition:width .7s}
+#obar-proj{position:absolute;top:-5px;bottom:-5px;width:3px;background:var(--tarif);border-radius:2px;left:0;opacity:0;transition:left .7s;box-shadow:0 0 8px var(--tarif)}
+#olbl{display:flex;justify-content:space-between;font-size:12px;color:var(--dim)}
+#opct{font-size:12px;font-weight:800;color:var(--ok);letter-spacing:.08em}
+#oreste{font-size:12px;color:var(--dim2);letter-spacing:.08em}
+
+#chart-card{flex:1;min-height:0;background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:16px;padding:12px;transition:all 0.3s ease}
+#chart-card:hover{border-color:var(--line-strong);box-shadow:var(--glow)}
+#spark{width:100%;height:100%;display:block}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px;flex-shrink:0}
+.tl{background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:14px;padding:12px 16px;transition:all 0.3s ease}
+.tl:hover{border-color:var(--line-strong);box-shadow:var(--glow)}
+.tl .l{font-size:12px;color:var(--dim);letter-spacing:.16em;font-weight:700}
+.tl .v{font-size:clamp(22px,3.4vh,30px);font-weight:800;margin-top:5px}
+.tl .v small{font-size:13px;color:var(--dim)}
+.tl .c{font-size:12px;color:var(--dim2);margin-top:2px;letter-spacing:.06em}
+
+#foot{display:flex;justify-content:space-between;font-size:12px;color:var(--dim2);letter-spacing:.16em;flex-shrink:0}
+
+#renta{background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:14px;padding:12px 16px;
+  display:flex;flex-direction:column;gap:8px;flex-shrink:0;transition:all 0.3s ease}
+#renta:hover{border-color:var(--line-strong);box-shadow:var(--glow)}
+.renta-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--dim)}
+.renta-top .rt{font-weight:800;letter-spacing:.16em;color:var(--accent)}
+.renta-top input{width:120px;background:rgba(5,8,15,0.8);border:1px solid var(--line-strong);color:var(--txt);
+  border-radius:8px;padding:6px 10px;font-family:inherit;font-size:13px;transition:all 0.2s ease}
+.renta-top input:focus{outline:none;border-color:var(--accent);box-shadow:var(--glow)}
+#rbar{position:relative;height:12px;border-radius:6px;background:rgba(5,8,15,0.8);border:1px solid var(--line);overflow:hidden}
+#rbar-f{height:100%;width:0%;border-radius:6px;background:linear-gradient(90deg,#00b4d8,var(--ok));box-shadow:var(--glow-ok);transition:width .7s}
+#rlbl{display:flex;justify-content:space-between;font-size:12px;color:var(--dim)}
+#rpct{font-weight:800;color:var(--ok)}
+#rbe{font-size:12px;color:var(--dim);letter-spacing:.06em;text-align:center}
+#rbe b{color:var(--ok)}
+
+.info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;
+  border:1px solid var(--dim2);color:var(--dim);font-size:12px;font-weight:800;cursor:pointer;margin-left:6px;
+  flex-shrink:0;line-height:1;vertical-align:middle;font-style:normal;transition:all 0.2s ease}
+.info:hover{border-color:var(--accent);color:var(--accent);box-shadow:var(--glow)}
+#tip{position:fixed;z-index:100;max-width:270px;background:rgba(13,19,33,0.95);backdrop-filter:blur(10px);border:1px solid var(--accent);
+  border-radius:12px;padding:10px 13px;font-size:12px;color:var(--txt);line-height:1.45;letter-spacing:0;
+  box-shadow:var(--glow-strong);opacity:0;pointer-events:none;transition:opacity .15s;left:0;top:0}
+#tip.show{opacity:1}
+
+@media(max-width:760px){
+  #app{overflow-y:auto;overflow-x:hidden}
+  #chart-card{flex:none;height:220px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="hdr">
+    <div class="t">DIVISION ÉNERGIE — COMPTE ÉPARGNE PHOTOVOLTAÏQUE</div>
+    <div class="s">3 INSTALLATIONS BEEM · TARIF BASE 9 kVA TTC</div>
+  </div>
+
+  <div id="main">
+    <div class="l">ÉCONOMIES RÉALISÉES — CUMUL ANNUEL <i class="info" data-tip="Cumul des économies solaires depuis le 1ᵉʳ janvier : autoconsommation évitée + revente du surplus.">i</i></div>
+    <div class="big"><span id="tot">--</span> <small>€</small></div>
+    <div class="sub"><b id="mo">--</b> CE MOIS · OBJECTIF : <span id="obj">300</span> €/AN</div>
+    <div id="objw">
+      <div id="obar"><div id="obar-f"></div><div id="obar-proj"></div></div>
+      <div id="olbl"><span>0 €</span><span id="opct">--% atteint</span><span id="omax">300 €</span></div>
+      <div id="oreste" style="text-align:center">—</div>
+    </div>
+  </div>
+
+  <div id="chart-card"><canvas id="spark"></canvas></div>
+
+  <div class="tiles">
+    <div class="tl"><div class="l">GAIN AUJOURD'HUI <i class="info" data-tip="Économies + revente générées aujourd'hui par le solaire.">i</i></div>
+      <div class="v" id="day">-- <small>€</small></div></div>
+    <div class="tl"><div class="l">MOYENNE / JOUR <i class="info" data-tip="Cumul annuel ÷ nombre de jours écoulés depuis le 1ᵉʳ janvier.">i</i></div>
+      <div class="v" id="avg" style="color:var(--ok)">-- <small>€</small></div>
+      <div class="c">depuis le 1ᵉʳ janvier</div></div>
+    <div class="tl"><div class="l">PROJECTION ANNÉE <i class="info" data-tip="Estimation du cumul au 31 décembre au rythme moyen depuis janvier (projection linéaire). Plutôt pessimiste au printemps, le solaire étant saisonnier.">i</i></div>
+      <div class="v" id="proj">-- <small>€</small></div>
+      <div class="c">à ce rythme</div></div>
+    <div class="tl"><div class="l">GAIN NET ANNUEL <i class="info" data-tip="Gain net = économies solaires de l'année − abonnement annuel (19,56 €/mois × 12 = 234,72 €). Négatif tant que les économies n'ont pas dépassé 234,72 €.">i</i></div>
+      <div class="v" id="net-v">-- <small>€</small></div></div>
+    <div class="tl"><div class="l">NET RÉEL À DATE <i class="info" data-tip="Économies − abonnement déjà écoulé (19,56 €/mois au prorata du temps passé dans l'année). Plus juste que le « gain net annuel », qui déduit les 12 mois d'abonnement d'un coup dès janvier.">i</i></div>
+      <div class="v" id="netreel">-- <small>€</small></div>
+      <div class="c">abonnement au prorata</div></div>
+    <div class="tl"><div class="l">NET APRÈS AMORT. <i class="info" id="tip-amort" data-tip="Net réel à date moins l'amortissement du matériel (panneaux + batteries) au prorata du temps écoulé.">i</i></div>
+      <div class="v" id="netamort">-- <small>€</small></div>
+      <div class="c">après abo + matériel</div></div>
+    <div class="tl"><div class="l">TARIF EDF <i class="info" data-tip="Prix du kWh (tarif réglementé base 9 kVA TTC) utilisé pour valoriser l'électricité solaire.">i</i></div>
+      <div class="v" style="color:var(--tarif); text-shadow:0 0 10px rgba(165,180,252,0.3)"><span id="tarif">--</span> <small>€/kWh</small></div></div>
+  </div>
+
+  <div id="renta">
+    <div class="renta-top">
+      <span class="rt">RENTABILITÉ DE L'INSTALLATION <i class="info" data-tip="Suivi du remboursement de l'investissement matériel (4 788 €) par les économies solaires. Saisis tes économies réalisées avant l'année en cours (2023–2025) : le total se met à jour en direct et est mémorisé sur cette tablette.">i</i></span>
+      <label style="margin-left:auto">Économies avant <span id="ryear">—</span> :</label>
+      <input type="number" id="rprev" step="1" min="0" placeholder="0"> <span>€</span>
+    </div>
+    <div id="rbar"><div id="rbar-f"></div></div>
+    <div id="rlbl"><span id="rleft">0 €</span><span id="rpct">--%</span><span id="rright">-- €</span></div>
+    <div id="rbe">—</div>
+  </div>
+
+  <div id="foot"><span>DIVISION ÉNERGIE RENOUVELABLE</span><span id="place"></span></div>
+</div>
+
+<div id="tip"></div>
+
+<script src="nexus-common.js"></script>
+<script>
+"use strict";
+const CFG=Object.assign(NX.loadConfig({
+  PLACE:'',
+  TOT:'sensor.solar_savings_year',
+  DAY:'sensor.solar_savings_today',
+  MONTH:'sensor.solar_savings_month',
+  NET:'sensor.solar_net_savings_year',
+  TARIF:'sensor.electricity_price_kwh',
+  TARGET:300,
+  ABONNEMENT_MENSUEL:15,
+  COUT_PANNEAUX:3000,
+  COUT_BATTERIES:2000,
+  DUREE_PANNEAUX:25,
+  DUREE_BATTERIES:12
+}),{HA_URL:location.origin});
+
+const gid=id=>document.getElementById(id);
+const AMORT_AN = CFG.COUT_PANNEAUX/CFG.DUREE_PANNEAUX + CFG.COUT_BATTERIES/CFG.DUREE_BATTERIES;
+const INVEST_TOTAL = CFG.COUT_PANNEAUX + CFG.COUT_BATTERIES;
+const HA={}; let ws=null,msgId=1;
+let histPts=[];
+const num=e=>{const s=HA[e];const v=s?parseFloat(s.state):NaN;return isNaN(v)?null:v;};
+const fr=(v,d)=>v==null?'--':v.toFixed(d).replace('.',',');
+
+function yearInfo(){
+  const now=new Date(), y=now.getFullYear();
+  const t0=new Date(y,0,1).getTime(), t1=new Date(y+1,0,1).getTime();
+  const daysInYear=(t1-t0)/86400000;
+  const daysElapsed=Math.max((now.getTime()-t0)/86400000, 1/24);
+  return {y,t0,t1,daysInYear,daysElapsed,daysLeft:Math.max(0,daysInYear-daysElapsed),frac:daysElapsed/daysInYear};
+}
+
+function signed(el,v,d){
+  el.innerHTML=(v==null?'--':(v>0?'+':'')+fr(v,d))+' <small>€</small>';
+  el.style.color=v==null?'var(--dim2)':v>=0?'var(--ok)':'var(--bad)';
+  if(v!=null && v>=0) el.style.textShadow='0 0 10px rgba(0,255,204,0.3)';
+  else if(v!=null && v<0) el.style.textShadow='0 0 10px rgba(255,51,102,0.3)';
+  else el.style.textShadow='none';
+}
+
+function pushHist(){
+  const tot=num(CFG.TOT); if(tot==null) return;
+  const last=histPts.length?histPts[histPts.length-1][1]:null;
+  if(last==null || Math.abs(tot-last)>0.0001) histPts.push([Date.now(),tot]);
+}
+
+function render(){
+  const tot=num(CFG.TOT), day=num(CFG.DAY), mo=num(CFG.MONTH), net=num(CFG.NET), tarif=num(CFG.TARIF);
+  const yi=yearInfo();
+
+  gid('tot').textContent=fr(tot,2);
+  const moEl=gid('mo');
+  moEl.textContent=mo==null?'--':(mo>=0?'↑ +':'↓ ')+fr(mo,2)+' €';
+  moEl.className=mo!=null&&mo<0?'neg':'';
+
+  const pct=tot==null?null:Math.max(0,tot/CFG.TARGET*100);
+  const proj=(tot!=null&&yi.frac>0)?tot/yi.frac:null;
+  const avg=(tot!=null)?tot/yi.daysElapsed:null;
+  const reste=(tot!=null)?Math.max(0,CFG.TARGET-tot):null;
+
+  gid('obar-f').style.width=Math.min(100,pct||0)+'%';
+  gid('opct').textContent=(pct==null?'--':Math.round(pct))+'% atteint';
+  gid('obj').textContent=CFG.TARGET; gid('omax').textContent=CFG.TARGET+' €';
+
+  const pm=gid('obar-proj');
+  if(proj!=null){ pm.style.opacity=1; pm.style.left='calc('+Math.min(100,proj/CFG.TARGET*100)+'% - 1.5px)'; }
+  else pm.style.opacity=0;
+
+  gid('oreste').innerHTML = tot==null ? '—'
+    : (reste>0
+        ? 'Reste <b style="color:var(--ok)">'+fr(reste,0)+' €</b> · '+Math.round(yi.daysLeft)+' jours · projection <b style="color:'+(proj>=CFG.TARGET?'var(--ok)':'var(--warn)')+'">'+fr(proj,0)+' €</b>'
+        : '<b style="color:var(--ok)">Objectif atteint ✓</b> · projection '+fr(proj,0)+' €');
+
+  signed(gid('day'),day,2);
+  signed(gid('net-v'),net,2);
+  const netReel = tot!=null ? tot - CFG.ABONNEMENT_MENSUEL*12*yi.frac : null;
+  signed(gid('netreel'),netReel,2);
+  const netAmort = netReel!=null ? netReel - AMORT_AN*yi.frac : null;
+  signed(gid('netamort'),netAmort,2);
+
+  gid('avg').innerHTML=(avg==null?'--':fr(avg,2))+' <small>€</small>';
+  const projEl=gid('proj');
+  projEl.innerHTML=(proj==null?'--':fr(proj,0))+' <small>€</small>';
+  projEl.style.color=proj==null?'var(--dim2)':(proj>=CFG.TARGET?'var(--ok)':'var(--warn)');
+  projEl.style.textShadow=proj!=null?(proj>=CFG.TARGET?'0 0 10px rgba(0,255,204,0.3)':'0 0 10px rgba(255,183,3,0.3)'):'none';
+  gid('tarif').textContent=fr(tarif,3);
+  renderRenta();
+
+  pushHist();
+  scheduleDraw();
+}
+
+let ecoPrev = parseFloat(localStorage.getItem('solar_eco_prev')||'0') || 0;
+(function(){
+  const el=gid('rprev'); if(!el) return;
+  if(ecoPrev) el.value=ecoPrev;
+  el.addEventListener('input',()=>{
+    ecoPrev=parseFloat(el.value)||0;
+    localStorage.setItem('solar_eco_prev',String(ecoPrev));
+    renderRenta();
+  });
+})();
+function renderRenta(){
+  const yi=yearInfo();
+  gid('ryear').textContent=yi.y;
+  gid('rright').textContent=Math.round(INVEST_TOTAL).toLocaleString('fr-FR')+' €';
+  const tot=num(CFG.TOT);
+  if(tot==null){ gid('rpct').textContent='--%'; gid('rbe').textContent='—'; return; }
+  const rythme=(yi.frac>0)?tot/yi.frac:null;
+  const cumul=ecoPrev+tot;
+  const pctRaw=cumul/INVEST_TOTAL*100;
+  gid('rbar-f').style.width=Math.max(0,Math.min(100,pctRaw))+'%';
+  gid('rpct').textContent=Math.round(pctRaw)+'% remboursé';
+  gid('rleft').textContent=Math.round(cumul).toLocaleString('fr-FR')+' €';
+  const reste=INVEST_TOTAL-cumul;
+  if(reste<=0){
+    gid('rbe').innerHTML='<b style="color:var(--ok)">✓ Installation entièrement payée et remboursée</b>';
+  }else if(rythme&&rythme>0){
+    const beY=new Date(Date.now()+reste/rythme*365.25*86400000).getFullYear();
+    gid('rbe').innerHTML='Reste <b>'+Math.round(reste).toLocaleString('fr-FR')+' €</b> · au rythme actuel (~'+Math.round(rythme)+' €/an) : break-even vers <b style="color:var(--accent)">'+beY+'</b>';
+  }else{
+    gid('rbe').textContent='Reste '+Math.round(reste).toLocaleString('fr-FR')+' € à rembourser';
+  }
+}
+
+async function loadHistory(){
+  const yi=yearInfo();
+  const url=CFG.HA_URL+'/api/history/period/'+new Date(yi.t0).toISOString()
+    +'?filter_entity_id='+CFG.TOT+'&minimal_response&no_attributes';
+  try{
+    const r=await fetch(url,{headers:{Authorization:'Bearer '+await NX.getToken()}});
+    if(!r.ok) return;
+    const j=await r.json();
+    const arr=(j&&j[0])?j[0]:[];
+    const hp=arr.map(x=>{
+      const v=parseFloat(x.state ?? x.s);
+      const t=new Date(x.last_changed ?? x.lc*1000 ?? x.lu*1000).getTime();
+      return isNaN(v)||!t?null:[t,v];
+    }).filter(Boolean);
+    if(hp.length) histPts=hp;
+    scheduleDraw();
+  }catch(e){}
+}
+
+const cvs=gid('spark'), cx=cvs.getContext('2d');
+let drawPending=false;
+function scheduleDraw(){ if(!drawPending){drawPending=true;requestAnimationFrame(()=>{drawPending=false;drawChart();});} }
+
+function drawChart(){
+  const dpr=window.devicePixelRatio||1;
+  const W=cvs.clientWidth, H=cvs.clientHeight;
+  if(!W||!H) return;
+  if(cvs.width!==W*dpr||cvs.height!==H*dpr){cvs.width=W*dpr;cvs.height=H*dpr;}
+  cx.setTransform(dpr,0,0,dpr,0,0);
+  cx.clearRect(0,0,W,H);
+
+  const padL=54,padR=14,padT=14,padB=24;
+  const iw=W-padL-padR, ih=H-padT-padB;
+  const yi=yearInfo(), t0=yi.t0, t1=yi.t1;
+  const tot=num(CFG.TOT);
+  const proj=(tot!=null&&yi.frac>0)?tot/yi.frac:null;
+
+  let vmax=CFG.TARGET;
+  histPts.forEach(p=>{ if(p[1]>vmax)vmax=p[1]; });
+  if(proj!=null&&proj>vmax)vmax=proj;
+  vmax=Math.max(vmax,10);
+  const guess=vmax/4, mag=Math.pow(10,Math.floor(Math.log10(guess))), step=Math.max(mag,Math.ceil(guess/mag)*mag);
+  vmax=Math.ceil(vmax/step)*step;
+  const X=t=>padL+(t-t0)/(t1-t0)*iw;
+  const Y=v=>padT+(1-v/vmax)*ih;
+
+  cx.font='11px ui-monospace,Consolas,monospace';
+  cx.strokeStyle='rgba(85,103,127,.25)'; cx.fillStyle='#7b93a8';
+  cx.setLineDash([3,5]); cx.lineWidth=1;
+  for(let v=0;v<=vmax+0.5;v+=step){
+    const yy=Y(v);
+    cx.beginPath();cx.moveTo(padL,yy);cx.lineTo(W-padR,yy);cx.stroke();
+    cx.textAlign='right';cx.fillText(Math.round(v)+'€',padL-6,yy+4);
+  }
+  cx.setLineDash([]);
+  cx.textAlign='center'; cx.fillStyle='#55677f';
+  const ML=['J','F','M','A','M','J','J','A','S','O','N','D'];
+  for(let m=0;m<12;m++){ cx.fillText(ML[m], X(new Date(yi.y,m,15).getTime()), H-8); }
+
+  cx.strokeStyle='rgba(165,180,252,.7)'; cx.setLineDash([6,4]); cx.lineWidth=1.4;
+  cx.beginPath();cx.moveTo(padL,Y(CFG.TARGET));cx.lineTo(W-padR,Y(CFG.TARGET));cx.stroke(); cx.setLineDash([]);
+  cx.fillStyle='#a5b4fc'; cx.textAlign='left';
+  cx.fillText('objectif '+CFG.TARGET+' €', padL+6, Math.max(Y(CFG.TARGET)-6, padT+11));
+
+  if(histPts.length>=2){
+    const maxN=iw*2, sN=Math.max(1,Math.floor(histPts.length/maxN));
+    const d=[]; for(let i=0;i<histPts.length;i+=sN) d.push(histPts[i]);
+    d.push(histPts[histPts.length-1]);
+
+    cx.beginPath(); cx.moveTo(X(d[0][0]),Y(0));
+    d.forEach(p=>cx.lineTo(X(p[0]),Y(p[1])));
+    cx.lineTo(X(d[d.length-1][0]),Y(0)); cx.closePath();
+    const gr=cx.createLinearGradient(0,padT,0,Y(0));
+    gr.addColorStop(0,'rgba(0,255,204,.25)'); gr.addColorStop(1,'rgba(0,255,204,.01)');
+    cx.fillStyle=gr; cx.fill();
+
+    cx.beginPath(); d.forEach((p,i)=>{const x=X(p[0]),y=Y(p[1]); i?cx.lineTo(x,y):cx.moveTo(x,y);});
+    cx.strokeStyle='#00ffcc'; cx.lineWidth=2; cx.lineJoin='round'; cx.stroke();
+
+    const last=d[d.length-1];
+    if(proj!=null){
+      cx.strokeStyle='rgba(0,255,204,.45)'; cx.setLineDash([5,4]); cx.lineWidth=1.6;
+      cx.beginPath(); cx.moveTo(X(last[0]),Y(last[1])); cx.lineTo(X(t1),Y(proj)); cx.stroke(); cx.setLineDash([]);
+      cx.beginPath(); cx.arc(X(t1),Y(Math.min(proj,vmax)),3.5,0,7); cx.fillStyle='rgba(0,255,204,.6)'; cx.fill();
+    }
+    cx.beginPath(); cx.arc(X(last[0]),Y(last[1]),4.5,0,7); cx.fillStyle='#00ffcc'; cx.shadowColor='#00ffcc'; cx.shadowBlur=8; cx.fill();
+    cx.shadowBlur=0;
+  }
+
+  const nx=X(Math.min(Date.now(),t1));
+  cx.strokeStyle='rgba(0,243,255,.4)'; cx.setLineDash([2,4]); cx.lineWidth=1;
+  cx.beginPath();cx.moveTo(nx,padT);cx.lineTo(nx,Y(0));cx.stroke();cx.setLineDash([]);
+}
+
+function connectWS(){
+  const url=NX.wsUrl();
+  ws=new WebSocket(url);
+  ws.onmessage=ev=>{
+    const m=JSON.parse(ev.data);
+    if(m.type==='auth_required')NX.getToken().then(t=>ws.send(JSON.stringify({type:'auth',access_token:t})));
+    else if(m.type==='auth_invalid'){try{localStorage.removeItem('ha_token');}catch(e){}}
+    else if(m.type==='auth_ok'){
+      ws.send(JSON.stringify({id:msgId++,type:'subscribe_events',event_type:'state_changed'}));
+      ws.send(JSON.stringify({id:msgId++,type:'get_states'}));
+    }
+    else if(m.type==='result'&&Array.isArray(m.result)){
+      m.result.forEach(s=>{HA[s.entity_id]=s;}); render();
+    }
+    else if(m.type==='event'&&m.event?.event_type==='state_changed'){
+      const s=m.event.data.new_state; if(s){HA[s.entity_id]=s; render();}
+    }
+  };
+  ws.onclose=()=>setTimeout(connectWS,5000);
+  ws.onerror=()=>ws.close();
+}
+
+function initTips(){
+  const tip=gid('tip'); if(!tip) return;
+  let pinned=null;
+  const place=el=>{
+    const r=el.getBoundingClientRect();
+    const tw=tip.offsetWidth, th=tip.offsetHeight;
+    let left=r.left+r.width/2-tw/2;
+    left=Math.max(8,Math.min(left,window.innerWidth-tw-8));
+    let top=r.top-th-8; if(top<8) top=r.bottom+8;
+    tip.style.left=left+'px'; tip.style.top=top+'px';
+  };
+  const open=el=>{ tip.textContent=el.getAttribute('data-tip')||''; tip.classList.add('show'); place(el); };
+  const close=()=>{ tip.classList.remove('show'); pinned=null; };
+  document.querySelectorAll('.info').forEach(el=>{
+    el.addEventListener('click',e=>{ e.stopPropagation(); if(pinned===el){close();} else {pinned=el; open(el);} });
+    el.addEventListener('mouseenter',()=>{ if(!pinned) open(el); });
+    el.addEventListener('mouseleave',()=>{ if(!pinned) close(); });
+  });
+  document.addEventListener('click',()=>{ if(pinned) close(); });
+  window.addEventListener('resize',()=>{ if(pinned) place(pinned); });
+}
+
+window.addEventListener('resize',scheduleDraw);
+setInterval(loadHistory,1800000);
+const _ta=gid('tip-amort');
+if(_ta) _ta.setAttribute('data-tip','Net réel à date moins l’amortissement du matériel au prorata. Investissement '+Math.round(INVEST_TOTAL)+' € (panneaux '+Math.round(CFG.COUT_PANNEAUX)+' € / '+CFG.DUREE_PANNEAUX+' ans + batteries '+Math.round(CFG.COUT_BATTERIES)+' € / '+CFG.DUREE_BATTERIES+' ans ≈ '+Math.round(AMORT_AN)+' €/an). Négatif tant que les économies ne couvrent pas abonnement + usure du matériel.');
+gid('place').textContent=CFG.PLACE;
+initTips(); render(); loadHistory(); connectWS();
+NX.initSettings({cfg:CFG,title:'Réglages — Économies solaires',getEntities:()=>Object.keys(HA),labels:{
+  PLACE:'Lieu affiché (texte libre, optionnel)',TOT:'Économies totales de l\'année (€)',DAY:'Gain du jour (€)',
+  MONTH:'Gain du mois (€)',NET:'Gain net annuel (€)',TARIF:'Tarif de l\'électricité (€/kWh)',
+  TARGET:'Objectif annuel (€)',ABONNEMENT_MENSUEL:'Abonnement mensuel (€)',COUT_PANNEAUX:'Coût des panneaux (€)',
+  COUT_BATTERIES:'Coût des batteries (€)',DUREE_PANNEAUX:'Durée de vie panneaux (ans)',DUREE_BATTERIES:'Durée de vie batteries (ans)'}});
+</script>
+</body>
+</html>

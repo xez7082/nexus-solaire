@@ -1,0 +1,19 @@
+# EXEMPLE à adapter (package HA) : crée les capteurs « gain » attendus par la page Économies.
+# Remplace sensor.ma_production_du_jour par ton capteur de production du jour en kWh.
+input_number:
+  tarif_electricite_kwh:
+    name: Tarif électricité
+    min: 0
+    max: 1
+    step: 0.0001
+    unit_of_measurement: "€/kWh"
+    initial: 0.2516
+
+template:
+  - sensor:
+      - name: "Gain solaire jour"
+        unique_id: nexus_gain_solaire_jour
+        unit_of_measurement: "€"
+        state: >
+          {{ (states('sensor.ma_production_du_jour') | float(0)
+              * states('input_number.tarif_electricite_kwh') | float(0)) | round(2) }}
