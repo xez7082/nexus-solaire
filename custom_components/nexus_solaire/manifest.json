@@ -1,7 +1,7 @@
 {
   "domain": "nexus_solaire",
   "name": "Nexus Solaire",
-  "codeowners": ["xez7082"],
+  "codeowners": ["@xez7082"],
   "config_flow": true,
   "dependencies": ["http", "frontend"],
   "documentation": "https://github.com/xez7082/nexus-solaire",
