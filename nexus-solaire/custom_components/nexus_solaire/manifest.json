@@ -1,12 +1,12 @@
 {
   "domain": "nexus_solaire",
   "name": "Nexus Solaire",
-  "codeowners": ["@TON_COMPTE"],
+  "codeowners": ["xez7082"],
   "config_flow": true,
   "dependencies": ["http", "frontend"],
-  "documentation": "https://github.com/TON_COMPTE/nexus-solaire",
+  "documentation": "https://github.com/xez7082/nexus-solaire",
   "integration_type": "service",
   "iot_class": "calculated",
-  "issue_tracker": "https://github.com/TON_COMPTE/nexus-solaire/issues",
+  "issue_tracker": "https://github.com/xez7082/nexus-solaire/issues",
   "version": "1.0.0"
 }
